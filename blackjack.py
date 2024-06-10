@@ -1,6 +1,6 @@
-
+import math
 from splits import SPLITS, SPLIT_DEVIATIONS
-from aces import ACE_NUM, ACES_SPLIT_LIMIT, ACE_DEVIATIONS
+from aces import ACE_NUM, STAND_IF_CANT_DOUBLE, ACE_DEVIATIONS
 from hard_hands import HARD_HANDS, HARD_DEVIATIONS
 from random import randrange
 
@@ -9,7 +9,7 @@ ACES_SPLIT_LIMIT = 2
 SPLIT_LIMIT = 4
 HIT_SOFT_SEVENTEEN = True
 
-def Hand:
+class Hand:
     def __init__(self, cards, cardsum, soft, split = False, doubled = False):
         self.cards = cards
         self.cardsum = cardsum
@@ -258,7 +258,7 @@ class Game:
 
     def executeSoftHand(self, player_hand, dealer_num):
         decision = None
-        while True
+        while True:
             if (player_hand.cardsum - 11, dealer_num) in ACE_NUM:
                 decision = ACE_NUM[(player_hand.cardsum - 11, dealer_num)]
             else:
@@ -391,3 +391,5 @@ class Game:
                     break
 
         
+blackjack = Game()
+blackjack.playShoe()
