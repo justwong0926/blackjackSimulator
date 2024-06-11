@@ -1,5 +1,7 @@
 import math
+import random
 from h17_counting import H17_HARD_TOTALS, H17_HARD_TOTAL_DEVIATIONS, H17_SOFT_TOTALS, H17_SOFT_TOTAL_DEVIATIONS, H17_SOFT_TOTAL_STAND_WHEN_CANT_DOUBLE, H17_SPLITS, H17_SPLIT_DEVIATIONS
+from basic_strategy import BS_HARD_TOTALS, BS_SOFT_TOTALS, BS_SOFT_TOTAL_STAND_WHEN_CANT_DOUBLE, BS_SPLITS
 from random import randrange
 import sys, os
 
@@ -25,6 +27,11 @@ class Game:
         self.soft_total_stand_when_cant_double = H17_SOFT_TOTAL_STAND_WHEN_CANT_DOUBLE
         self.splits = H17_SPLITS
         self.split_deviations = H17_SPLIT_DEVIATIONS
+        if playstyle != "H17":
+            self.hard_totals = BS_HARD_TOTALS
+            self.soft_totals = BS_SOFT_TOTALS
+            self.soft_total_stand_when_cant_double = BS_SOFT_TOTAL_STAND_WHEN_CANT_DOUBLE
+            self.splits = BS_SPLITS
 
 
         self.decks = decks
@@ -51,6 +58,7 @@ class Game:
                 stack.append(10)
             for i in range(4):
                 stack.append("A")
+        random.shuffle(stack)
         return stack
     
     def playShoe(self):
@@ -63,6 +71,15 @@ class Game:
     def playMoney(self, dollars_to_play):
         while self.money_bet < dollars_to_play:
             self.playShoe()
+
+    def playUntil(self, starting, lower_bound, upper_bound):
+        while self.profit + starting > lower_bound and self.profit + starting < upper_bound:
+            self.playShoe()
+        if self.profit < 0:
+            # false is lose
+            return False
+        else:
+            return True
 
     def findTrueCount(self):
         # return absolute count for deviations, use rounded for bet sizing
@@ -93,9 +110,8 @@ class Game:
         self.count = 0
     
     def drawCard(self):
-        ind = randrange(len(self.curr_stack))
         self.cards_in_play -= 1
-        card = self.curr_stack.pop(ind)
+        card = self.curr_stack.pop()
         if card == 'A' or card == 10:
             self.count -= 1
         elif card <= 6:
@@ -138,7 +154,7 @@ class Game:
         print("Dealer second card", str(dealer_second_card))
 
         if insurance:
-            self.money_bet -= player_bet * 0.5
+            self.money_bet += player_bet * 0.5
             if self.isBlackjack(dealer_hand.cards[0], dealer_second_card):
                 if self.isBlackjack(player_first_card, player_second_card):
                     # even money
@@ -496,9 +512,35 @@ class Game:
         print("HAND OVER")
         print("")
 
-# comment this line out for prints
-sys.stdout = open(os.devnull, 'w')
-blackjack = Game(decks = 6, cut=63, flat_bet = False)
-blackjack.playMoney(10000000)
-sys.stdout = sys.__stdout__
-print(blackjack.profit, blackjack.rounds_played)
+
+'''
+BETTING_AMOUNT = 10000000
+
+profit = 0
+simulations_ran = 20
+for i in range(simulations_ran):
+    blackjack = Game(playstyle = "BS", decks = 2, cut=26, flat_bet = True)
+    # comment this line out for prints
+    sys.stdout = open(os.devnull, 'w')
+    blackjack.playMoney(BETTING_AMOUNT)
+    sys.stdout = sys.__stdout__
+    profit += blackjack.profit
+    print(blackjack.profit, blackjack.rounds_played)
+print("In this simulation, the average casino edge is: ", (-profit / BETTING_AMOUNT / simulations_ran) * 100, "%")
+'''
+
+DOUBLE_OR_NOTHING_TRIES = 1000
+wins = 0
+rounds_played = 0
+for i in range(DOUBLE_OR_NOTHING_TRIES):
+    blackjack = Game(playstyle = "BS", decks = 2, cut = 26, flat_bet = True)
+    # comment this line out for prints
+    sys.stdout = open(os.devnull, 'w')
+    result = blackjack.playUntil(2000, 0, 4000)
+    sys.stdout = sys.__stdout__
+    rounds_played += blackjack.rounds_played
+    if result:
+        wins += 1
+    
+print(wins, " wins out of ", DOUBLE_OR_NOTHING_TRIES)
+print("Rounds played on average: ", rounds_played / DOUBLE_OR_NOTHING_TRIES)
